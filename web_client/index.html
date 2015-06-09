@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+ <head>
+  <title>This is the NEDU live EEG display POC</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="jquery.min.js" charset="utf-8"></script>
+  <script src="d3.min.js" charset="utf-8"></script>
+  <script src="Thnkrchart.js" charset="utf-8"></script>
+  <script type="text/javascript">
+  
+	function init() {
+		var server = "http://192.168.0.18:8080/";
+	
+		var chart = new ThnkrChart(1800, 900);
+		chart.xText = "Seconds";
+		chart.yText = "Frequency (Hz)";
+		chart.titleText = "NEDU Project EEG Series TEST";
+		chart.Ticks = 5;
+		chart.TickDuration = 1000;
+		chart.MaxValue = 100;
+
+		function update() {
+			$.getJSON(server, function(data) {
+				var items = [];
+				$.each(data, function(key, val) {
+					chart.chartSeries[key] = val;
+				});
+			}).done(function() {
+				$('#status').html("SUCCESS: connected to server ...");
+			}).fail(function() {
+				$('#status').html("FAILED: to connect to server ...");
+			});
+
+			setTimeout(update, 1000);
+		}
+
+		$.getJSON(server, function(data) {
+			var items = [];
+			$.each(data, function(key, val) {
+				chart.addSeries(key);
+			});
+		}).done(function() {
+			$('#status').html("SUCCESS: connected to server ...");
+		}).fail(function() {
+			$('#status').html("FAILED: to connect to server ...");
+		});
+		
+		setTimeout(update, 1000);
+	}
+  </script>
+ </head>
+<body onLoad="init()">
+	<footer id="status">LOADING ...</footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+body {
+	background-color: black;
+    color: #ffffff;
+}
+
+svg {
+  font: 15px sans-serif;
+  fill: #ffffff;
+}
+ 
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+ 
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #bdc3c7;
+  shape-rendering: crispEdges;
+}
