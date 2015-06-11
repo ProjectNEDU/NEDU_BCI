@@ -10,6 +10,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 
@@ -18,10 +19,9 @@ extern "C" {
 #endif
 
 /* name of the USB Port to connect to */
-#define PORT_NAME "/dev/ttyUSB10"
-#define THNKR_ID 1337
+#define PORT_NAME "/dev/ttyUSB0"
 #define MAX_PAYLOAD_SIZE 169
-#define MAX_QUEUE_SIZE 100
+#define MAX_QUEUE_SIZE 10
 #define BAUD_RATE B115200
 
 /* Parser types */
@@ -34,29 +34,23 @@ extern "C" {
 #define THNKR_CODE_POOR_QUALITY       0x02
 #define THNKR_CODE_ATTENTION          0x04
 #define THNKR_CODE_MEDITATION         0x05
+#define THNKR_CODE_BLINK              0x16
 #define THNKR_CODE_8BITRAW_SIGNAL     0x06
 #define THNKR_CODE_RAW_MARKER         0x07
 
-#define THNKR_CODE_RAW_SIGNAL         0x80
-#define THNKR_CODE_EEG_POWERS         0x81
-#define THNKR_CODE_ASIC_EEG_POWER_INT 0x83
-
 /* Byte codes */
-#define CONNECT              0xC0
-#define DISCONNECT           0xC1
-#define AUTOCONNECT          0xC2
-#define SYNC                 0xAA
-#define EXCODE               0x55
-#define POOR_SIGNAL          0x02
-#define ATTENTION            0x04
-#define MEDITATION           0x05
-#define BLINK                0x16
-#define HEADSET_CONNECTED    0xD0
-#define HEADSET_NOT_FOUND    0xD1
-#define HEADSET_DISCONNECTED 0xD2
-#define REQUEST_DENIED       0xD3
-#define STANDBY_SCAN         0xD4
-#define RAW_VALUE            0x80
+#define THNKR_CODE_LOW_VALUE            0x40
+#define THNKR_CODE_RAW_SIGNAL           0x80
+#define THNKR_CODE_EEG_POWERS           0x81
+#define THNKR_CODE_ASIC_EEG_POWER_INT   0x83
+#define THNKR_CODE_CONNECT              0xC0
+#define THNKR_CODE_DISCONNECT           0xC1
+#define THNKR_CODE_AUTOCONNECT          0xC2
+#define THNKR_CODE_CONNECTED            0xD0
+#define THNKR_CODE_NOT_FOUND            0xD1
+#define THNKR_CODE_DISCONNECTED         0xD2
+#define THNKR_CODE_DENIED               0xD3
+#define THNKR_CODE_STANDBY_SCAN         0xD4
 
 /* Decoder states (Packet decoding) */
 #define THNKR_STATE_NULL           0x00  /* NULL state */
@@ -73,8 +67,9 @@ extern "C" {
 /* Other constants */
 #define THNKR_SYNC_BYTE            0xAA  /* Syncronization byte */
 #define THNKR_EXCODE_BYTE          0x55  /* EXtended CODE level byte */
+#define THNKR_MODE_BYTE            0x0F  /* attention enabled, meditation enabled, raw wave enabled, 57.6k baud rate */
 
-int __attribute__ ((constructor)) initialize(void);
+void __attribute__ ((constructor)) libmain(void);
 void __attribute__ ((destructor)) disconnectAndClose(void);
 
 /**
@@ -229,7 +224,7 @@ int ThnkrEegDecoderInit(
  */
 int ThnkrEegDecoderParse(
 	ThnkrEegDecoder* pParser,
-	unsigned char* bytes
+	unsigned char byte
 );
 
 /**
@@ -246,7 +241,6 @@ void handleDataValueFunc(
 /**
 * Sets the TTY (USB) interface attributes
 */
-
 int setInterfaceAttributes(
 	int fd,
 	int speed,
@@ -254,10 +248,15 @@ int setInterfaceAttributes(
 );
 
 /**
+* This is the main entry point of the library
+* and it will run the initialize function in a separate thread
+*/
+void libmain();
+
+/**
 * Initializez the ThnkGearEegConnector
 */
-
-int initialize();
+void* initialize(void* args);
 
 
 /**

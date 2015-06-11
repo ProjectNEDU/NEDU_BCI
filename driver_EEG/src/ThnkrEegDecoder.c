@@ -54,127 +54,8 @@ int ThnkrEegDecoderInit(
 
 int ThnkrEegDecoderParse(
 	ThnkrEegDecoder* pParser,
-	unsigned char* bytes
+	unsigned char byte
 ) {
-	unsigned char* payLoad;
-	unsigned short payLoadSize = 0;
-	unsigned short checkSum = 0;
-	unsigned short excodeCount = 0;
-	
-	if(bytes[0] == SYNC && bytes[1] == SYNC) {
-		read(dev, (char*)&payLoadSize, 1);
-		if(payLoadSize <= MAX_PAYLOAD_SIZE && payLoadSize > 0) {
-			payLoad = (unsigned char*)malloc(payLoadSize * sizeof(char));
-			read(dev, payLoad, payLoadSize);
-			read(dev, (char*)&checkSum, 1);
-			
-			unsigned short it = payLoadSize - 1;
-			int checkSumCalc = payLoad[0];
-			while(it > 0) {
-				checkSumCalc += payLoad[it--];
-			}
-			checkSumCalc = ((~checkSumCalc) & 0xFF);
-			
-			printf("checkSumCalc is: 0x%x and checkSum is: 0x%x\n", checkSumCalc, checkSum);
-			printf("payLoadSize is: %d\n", payLoadSize);
-			for(int i = 0; i < (size_t)payLoadSize; i++) {
-				printf("byte %i is: %x\n", i, payLoad[i]);
-			}
-			printf("================================================\n");
-			
-			if(checkSumCalc == checkSum) {
-				it = 0;
-				while(payLoad[it] == EXCODE && it < payLoadSize) {
-					excodeCount++;
-				}
-				
-				if(payLoad[excodeCount] < THNKR_CODE_RAW_SIGNAL) {
-					switch(payLoad[excodeCount]) {
-#ifdef DEBUG
-							printf("\tMULTI/SINGLE is: SINGLE\n");
-#endif
-						case POOR_SIGNAL:
-#ifdef DEBUG
-							printf("CODE is: POOR_SIGNAL\n");
-#endif
-							break;
-							
-						case ATTENTION:
-#ifdef DEBUG
-							printf("CODE is: ATTENTION\n");
-#endif
-							break;
-							
-						case MEDITATION:
-#ifdef DEBUG
-							printf("CODE is: MEDITATION\n");
-#endif
-							break;
-							
-						case BLINK:
-#ifdef DEBUG
-							printf("CODE is: BLINK\n");
-#endif
-							break;
-							
-						default:
-#ifdef DEBUG
-							printf("CODE is: UNKNOWN\n");
-#endif
-							break;
-					}
-				} else {
-					switch(payLoad[excodeCount]) {
-#ifdef DEBUG
-							printf("\tMULTI/SINGLE is: MULTI\n");
-#endif
-					case RAW_VALUE:
-#ifdef DEBUG
-							printf("CODE is: RAW_VALUE\n");
-#endif
-							break;
-							
-						case HEADSET_CONNECTED:
-#ifdef DEBUG
-							printf("CODE is: HEADSET_CONNECTED\n");
-#endif
-							break;
-							
-						case HEADSET_NOT_FOUND:
-#ifdef DEBUG
-							printf("CODE is: HEADSET_NOT_FOUND\n");
-#endif
-							break;
-							
-						case HEADSET_DISCONNECTED:
-#ifdef DEBUG
-							printf("CODE is: HEADSET_DISCONNECTED\n");
-#endif
-							break;
-							
-						case REQUEST_DENIED:
-#ifdef DEBUG
-							printf("CODE is: REQUEST_DENIED\n");
-#endif
-							break;
-							
-						case STANDBY_SCAN:
-#ifdef DEBUG
-							printf("CODE is: STANDBY_SCAN\n");
-#endif
-							break;
-							
-						default:
-#ifdef DEBUG
-							printf("CODE is: UNKNOWN\n");
-#endif
-							break;
-					}
-				}
-			}
-		}
-	}
-/*
     int returnValue = 0;
 
     if(!pParser) return -1;
@@ -202,11 +83,9 @@ int ThnkrEegDecoderParse(
         case THNKR_STATE_PAYLOAD_LENGTH:
             pParser->payloadLength = byte;
 			
-            if(pParser->payloadLength > 170) {
+            if(pParser->payloadLength > MAX_PAYLOAD_SIZE) {
                 pParser->state = THNKR_STATE_SYNC;
                 returnValue = -3;
-            } else if(pParser->payloadLength == 170) {
-                returnValue = -4;
             } else {
                 pParser->payloadBytesReceived = 0;
                 pParser->payloadSum = 0;
@@ -240,7 +119,7 @@ int ThnkrEegDecoderParse(
         // Waiting for high byte of 2-byte raw value
         case THNKR_STATE_WAIT_HIGH:
             // Check if current byte is a high byte
-            if((byte & 0xC0) == 0x80) {
+            if((byte & THNKR_CODE_CONNECT) == THNKR_CODE_RAW_SIGNAL) {
                 // High byte recognized, will be saved as parser->lastByte
                 pParser->state = THNKR_STATE_WAIT_LOW;
             }
@@ -249,7 +128,7 @@ int ThnkrEegDecoderParse(
         // Waiting for low byte of 2-byte raw value
         case THNKR_STATE_WAIT_LOW:
             // Check if current byte is a valid low byte
-            if((byte & 0xC0) == 0x40) {
+            if((byte & THNKR_CODE_CONNECT) == THNKR_CODE_LOW_VALUE) {
 
                 // Stuff the high and low part of the raw value into an array
                 pParser->payload[0] = pParser->lastByte;
@@ -285,7 +164,7 @@ int ThnkrEegDecoderParse(
     pParser->lastByte = byte;
 
     return returnValue;
-*/
+
 return 0;
 }
 
@@ -311,7 +190,7 @@ int parsePacketPayload(
         code = pParser->payload[i++];
 
         /* Parse value length */
-        if(code >= 0x80) {
+        if(code >= THNKR_CODE_RAW_SIGNAL) {
 			numBytes = pParser->payload[i++];
         } else {
 			numBytes = 1;
@@ -323,7 +202,7 @@ int parsePacketPayload(
 				extendedCodeLevel,
 				code,
 				numBytes,
-                pParser->payload+i,
+                pParser->payload + i,
 				pParser->customData
 			);
         }
@@ -354,30 +233,43 @@ void handleDataValueFunc(
 			.lGamma = 0,
 			.mGamma = 0
 		};
-		
+
 		switch(code) {
-			/* [CODE]: ATTENTION eSense */
-			case(0x04):
+
+			case THNKR_CODE_ATTENTION:
 				eegItem.attention = value[0] & 0xFF;
 			break;
-			/* [CODE]: MEDITATION eSense */
-			case(0x05):
+				
+			case THNKR_CODE_MEDITATION:
 				eegItem.meditation = value[0] & 0xFF;
 			break;
+			
+			case THNKR_CODE_ASIC_EEG_POWER_INT:
+			
+			/**
+			 * This Data Value represents the current magnitude of 8 commonly-recognized types of EEG (brainwaves).
+			 * It is the ASIC equivalent of EEG_POWER, with the main difference being that this Data Value is output as a series of
+			 * eight 3-byte unsigned integers instead of 4-byte floating point numbers.
+			 * These 3-byte unsigned integers are in big-endian format.
+			**/
+			
+				eegItem.delta = value[0] | value[1] | value[2];
+				eegItem.theta = value[3] | value[4] | value[5];
+				eegItem.lAlpha = value[6] | value[7] | value[8];
+				eegItem.hAlpha = value[9] | value[10] | value[11];
+				eegItem.lBeta = value[12] | value[13] | value[14];
+				eegItem.hBeta = value[15] | value[16] | value[17];
+				eegItem.lGamma = value[18] | value[19] | value[20];
+				eegItem.mGamma = value[21] | value[22] | value[23];
+				
+				eegDataQueue.push(&eegDataQueue, eegItem);
+			break;
+			
 			/* Other [CODE]s */
 			default:
-				eegItem.delta = value[0] & 0xFF;
-				eegItem.theta = value[1] & 0xFF;
-				eegItem.lAlpha = value[2] & 0xFF;
-				eegItem.hAlpha = value[3] & 0xFF;
-				eegItem.lBeta = value[4] & 0xFF;
-				eegItem.hBeta = value[5] & 0xFF;
-				eegItem.lGamma = value[6] & 0xFF;
-				eegItem.mGamma = value[7] & 0xFF;
+				// not implemented yet
 			break;
 		}
-		
-		eegDataQueue.push(&eegDataQueue, eegItem);
 	}
 }
 
@@ -392,43 +284,43 @@ char* getThnkrDataJSON() {
 	char* buf = (char*)malloc(255 * sizeof(char));
 	
 	strncpy(buf, "{\"attention\":\"", 14);
-	snprintf(num, 25,"%f", eegItem.attention);
+	snprintf(num, 25, "%f", eegItem.attention);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"meditation\":\"", 16);
-	snprintf(num, 25,"%f", eegItem.attention);
+	snprintf(num, 25, "%f", eegItem.attention);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"delta\":\"", 11);
-	snprintf(num, 25,"%f", eegItem.delta);
+	snprintf(num, 25, "%f", eegItem.delta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"theta\":\"", 11);
-	snprintf(num, 25,"%f", eegItem.theta);
+	snprintf(num, 25, "%f", eegItem.theta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_alpha\":\"", 15);
-	snprintf(num, 25,"%f", eegItem.lAlpha);
+	snprintf(num, 25, "%f", eegItem.lAlpha);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"high_alpha\":\"", 16);
-	snprintf(num, 25,"%f", eegItem.hAlpha);
+	snprintf(num, 25, "%f", eegItem.hAlpha);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_beta\":\"", 14);
-	snprintf(num, 25,"%f", eegItem.lBeta);
+	snprintf(num, 25, "%f", eegItem.lBeta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"high_beta\":\"", 15);
-	snprintf(num, 25,"%f", eegItem.hBeta);
+	snprintf(num, 25, "%f", eegItem.hBeta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_gamma\":\"", 15);
-	snprintf(num, 25,"%f", eegItem.lGamma);
+	snprintf(num, 25, "%f", eegItem.lGamma);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"mid_gamma\":\"", 15);
-	snprintf(num, 25,"%f", eegItem.mGamma);
+	snprintf(num, 25, "%f", eegItem.mGamma);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\"}\0", 3);
@@ -473,47 +365,55 @@ int setInterfaceAttributes(
 	return 0;
 };
 
-int initialize() {
+void* initialize(void* args) {
+
 	eegDataQueue = createQueue();
 	
 	char conBuf;
 	
 	dev = open(PORT_NAME, O_RDWR | O_NOCTTY | O_SYNC);
-	if(setInterfaceAttributes(dev, BAUD_RATE, 0) != 0) return errno;
+	setInterfaceAttributes(dev, BAUD_RATE, 0);
 	
-	conBuf = (char)DISCONNECT;
+	conBuf = (char)THNKR_CODE_DISCONNECT;
 	write(dev, (char*)&conBuf, 1);
 	sleep(5);
 	
-	conBuf = (char)AUTOCONNECT;
+	conBuf = (char)THNKR_CODE_AUTOCONNECT;
 	write(dev, (char*)&conBuf, 1);
 	sleep(5);
 	
 	ThnkrEegDecoder parser;
 	ThnkrEegDecoderInit(&parser, THNKR_TYPE_PACKETS, handleDataValueFunc, NULL);
 	
-	size_t bufSize  = 2 * sizeof(char);
-	unsigned char* buf = (unsigned char*)malloc(bufSize);
+	size_t bufSize  = 1 * sizeof(char);
+	unsigned char buf = 0;
 	while(1) {
-		read(dev, (unsigned char*)buf, bufSize);
+		read(dev, &buf, bufSize);
 		ThnkrEegDecoderParse(&parser, buf);
 	}
-	
-	return 0;
 }
 
 void disconnectAndClose() {
 	if(dev != 0) {
-		write(dev, (char*)DISCONNECT, 1);
+		write(dev, (char*)THNKR_CODE_DISCONNECT, 1);
 		close(dev);
 	}
+}
+
+void libmain() {
+	pthread_t tid = NULL;
+	int err = pthread_create(&tid, NULL, &initialize, NULL);
+	
+	if(err != 0) printf("\ncan't create thread :[%s]", strerror(err));
 }
 
 void push(
 	Queue* queue,
 	EegData item
 ) {
-	if(queue->size > MAX_QUEUE_SIZE) return;
+	if(queue->size > MAX_QUEUE_SIZE) {
+		queue->pop(queue);
+	}
 	
     Node* n = (Node*)malloc(sizeof(Node));
     n->item = item;
