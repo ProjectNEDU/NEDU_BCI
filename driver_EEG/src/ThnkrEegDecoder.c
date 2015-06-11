@@ -284,43 +284,43 @@ char* getThnkrDataJSON() {
 	char* buf = (char*)malloc(255 * sizeof(char));
 	
 	strncpy(buf, "{\"attention\":\"", 14);
-	snprintf(num, 25, "%f", eegItem.attention);
+	snprintf(num, 25, "%d", eegItem.attention);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"meditation\":\"", 16);
-	snprintf(num, 25, "%f", eegItem.attention);
+	snprintf(num, 25, "%d", eegItem.attention);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"delta\":\"", 11);
-	snprintf(num, 25, "%f", eegItem.delta);
+	snprintf(num, 25, "%d", eegItem.delta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"theta\":\"", 11);
-	snprintf(num, 25, "%f", eegItem.theta);
+	snprintf(num, 25, "%d", eegItem.theta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_alpha\":\"", 15);
-	snprintf(num, 25, "%f", eegItem.lAlpha);
+	snprintf(num, 25, "%d", eegItem.lAlpha);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"high_alpha\":\"", 16);
-	snprintf(num, 25, "%f", eegItem.hAlpha);
+	snprintf(num, 25, "%d", eegItem.hAlpha);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_beta\":\"", 14);
-	snprintf(num, 25, "%f", eegItem.lBeta);
+	snprintf(num, 25, "%d", eegItem.lBeta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"high_beta\":\"", 15);
-	snprintf(num, 25, "%f", eegItem.hBeta);
+	snprintf(num, 25, "%d", eegItem.hBeta);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"low_gamma\":\"", 15);
-	snprintf(num, 25, "%f", eegItem.lGamma);
+	snprintf(num, 25, "%d", eegItem.lGamma);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\",\"mid_gamma\":\"", 15);
-	snprintf(num, 25, "%f", eegItem.mGamma);
+	snprintf(num, 25, "%d", eegItem.mGamma);
 	strncat(buf, num, strlen(num));
 	
 	strncat(buf, "\"}\0", 3);

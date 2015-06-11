@@ -77,16 +77,16 @@ void __attribute__ ((destructor)) disconnectAndClose(void);
 * delta, theta, low-alpha, high-alpha, low-beta, high-beta, low-gamma, and mid-gamma
 */
 typedef struct EegData {
-	double attention;
-	double meditation;
-	double delta;
-	double theta;
-	double lAlpha;
-	double hAlpha;
-	double lBeta;
-	double hBeta;
-	double lGamma;
-	double mGamma;
+	unsigned int attention;
+	unsigned int meditation;
+	unsigned int delta;
+	unsigned int theta;
+	unsigned int lAlpha;
+	unsigned int hAlpha;
+	unsigned int lBeta;
+	unsigned int hBeta;
+	unsigned int lGamma;
+	unsigned int mGamma;
 } EegData;
 
 /**
