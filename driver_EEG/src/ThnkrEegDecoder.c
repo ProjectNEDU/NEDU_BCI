@@ -253,14 +253,14 @@ void handleDataValueFunc(
 			 * These 3-byte unsigned integers are in big-endian format.
 			**/
 			
-				eegItem.delta = value[0] | value[1] | value[2];
-				eegItem.theta = value[3] | value[4] | value[5];
-				eegItem.lAlpha = value[6] | value[7] | value[8];
-				eegItem.hAlpha = value[9] | value[10] | value[11];
-				eegItem.lBeta = value[12] | value[13] | value[14];
-				eegItem.hBeta = value[15] | value[16] | value[17];
-				eegItem.lGamma = value[18] | value[19] | value[20];
-				eegItem.mGamma = value[21] | value[22] | value[23];
+				eegItem.delta = (value[0] << 16) + (value[1] << 8) + value[2];
+				eegItem.theta = (value[3] << 16) + (value[4] << 8) + value[5];
+				eegItem.lAlpha = (value[6] << 16) + (value[7] << 8) + value[8];
+				eegItem.hAlpha = (value[9] << 16) + (value[10] << 8) + value[11];
+				eegItem.lBeta = (value[12] << 16) + (value[13] << 8) + value[14];
+				eegItem.hBeta = (value[15] << 16) + (value[16] << 8) + value[17];
+				eegItem.lGamma = (value[18] << 16) + (value[19] << 8) + value[20];
+				eegItem.mGamma = (value[21] << 16) + (value[22] << 8) + value[23];
 				
 				eegDataQueue.push(&eegDataQueue, eegItem);
 			break;
