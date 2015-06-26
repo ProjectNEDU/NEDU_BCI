@@ -83,7 +83,10 @@ int ThnkrEegDecoderParse(
         case THNKR_STATE_PAYLOAD_LENGTH:
             pParser->payloadLength = byte;
 			
-            if(pParser->payloadLength > MAX_PAYLOAD_SIZE) {
+			if(pParser->payloadLength == MAX_PAYLOAD_SIZE) {
+				pParser->state = THNKR_STATE_SYNC;
+                returnValue = -2;
+            } else if(pParser->payloadLength > MAX_PAYLOAD_SIZE) {
                 pParser->state = THNKR_STATE_SYNC;
                 returnValue = -3;
             } else {
@@ -224,14 +227,14 @@ void handleDataValueFunc(
 		EegData eegItem = {
 			.attention = 0,
 			.meditation = 0,
-			.delta = 0,
-			.theta = 0,
-			.lAlpha = 0,
-			.hAlpha = 0,
-			.lBeta = 0,
-			.hBeta = 0,
-			.lGamma = 0,
-			.mGamma = 0
+			.delta = 0.0f,
+			.theta = 0.0f,
+			.lAlpha = 0.0f,
+			.hAlpha = 0.0f,
+			.lBeta = 0.0f,
+			.hBeta = 0.0f,
+			.lGamma = 0.0f,
+			.mGamma = 0.0f
 		};
 
 		switch(code) {
@@ -253,14 +256,14 @@ void handleDataValueFunc(
 			 * These 3-byte unsigned integers are in big-endian format.
 			**/
 			
-				eegItem.delta = (value[0] << 16) + (value[1] << 8) + value[2];
-				eegItem.theta = (value[3] << 16) + (value[4] << 8) + value[5];
-				eegItem.lAlpha = (value[6] << 16) + (value[7] << 8) + value[8];
-				eegItem.hAlpha = (value[9] << 16) + (value[10] << 8) + value[11];
-				eegItem.lBeta = (value[12] << 16) + (value[13] << 8) + value[14];
-				eegItem.hBeta = (value[15] << 16) + (value[16] << 8) + value[17];
-				eegItem.lGamma = (value[18] << 16) + (value[19] << 8) + value[20];
-				eegItem.mGamma = (value[21] << 16) + (value[22] << 8) + value[23];
+				eegItem.delta = (value[0] << 16) | (value[1] << 8) | value[2];
+				eegItem.theta = (value[3] << 16) | (value[4] << 8) | value[5];
+				eegItem.lAlpha = (value[6] << 16) | (value[7] << 8) | value[8];
+				eegItem.hAlpha = (value[9] << 16) | (value[10] << 8) | value[11];
+				eegItem.lBeta = (value[12] << 16) | (value[13] << 8) | value[14];
+				eegItem.hBeta = (value[15] << 16) | (value[16] << 8) | value[17];
+				eegItem.lGamma = (value[18] << 16) | (value[19] << 8) | value[20];
+				eegItem.mGamma = (value[21] << 16) | (value[22] << 8) | value[23];
 				
 				eegDataQueue.push(&eegDataQueue, eegItem);
 			break;

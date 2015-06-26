@@ -20,7 +20,7 @@ extern "C" {
 
 /* name of the USB Port to connect to */
 #define PORT_NAME "/dev/ttyUSB0"
-#define MAX_PAYLOAD_SIZE 169
+#define MAX_PAYLOAD_SIZE 170
 #define MAX_QUEUE_SIZE 10
 #define BAUD_RATE B115200
 
